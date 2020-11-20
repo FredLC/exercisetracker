@@ -30,7 +30,7 @@ app.get("/api/exercise/users", (req, res) => {
   let query = User.find({}).select("_id username __v");
   query.exec((err, result) => {
     if (err) {
-      console.log(err);
+      res.send(err);
     } else {
       res.send(result);
     }
@@ -81,12 +81,43 @@ app.get("/api/exercise/log", (req, res) => {
       return console.log(err);
     }
 
-    res.json({
-      _id: user._id,
-      username: user.username,
-      count: user.count,
-      log: user.log,
-    });
+    if (req.query.limit && req.query.from) {
+      const limit = req.query.limit;
+      const filtered = user.log.filter(
+        (ex) => new Date(ex.date.slice(4)) >= new Date(req.query.from)
+      );
+      res.json({
+        _id: user._id,
+        username: user.username,
+        count: Number(limit),
+        log: filtered.slice(filtered.length - Number(limit)),
+      });
+    } else if (req.query.limit) {
+      const limit = req.query.limit;
+      res.json({
+        _id: user._id,
+        username: user.username,
+        count: Number(limit),
+        log: user.log.slice(user.log.length - Number(limit)),
+      });
+    } else if (req.query.from) {
+      const filtered = user.log.filter(
+        (ex) => new Date(ex.date.slice(4)) >= new Date(req.query.from)
+      );
+      res.json({
+        _id: user._id,
+        username: user.username,
+        count: filtered.length,
+        log: filtered,
+      });
+    } else {
+      res.json({
+        _id: user._id,
+        username: user.username,
+        count: user.count,
+        log: user.log,
+      });
+    }
   });
 });
 
